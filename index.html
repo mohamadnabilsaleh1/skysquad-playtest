@@ -1,0 +1,293 @@
+<title>Sky Squad Playtest</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;600;700&display=swap">
+<style>
+  :root {
+    --sky: #0b1a2e;
+    --sky-2: #102a44;
+    --horizon: #16405a;
+    --line: #234e6b;
+    --cream: #f3e9d8;
+    --cream-dim: #b9c3cc;
+    --sun: #ff8a3d;
+    --sun-deep: #d9642a;
+    --enemy: #e2453c;
+    --coin: #ffd166;
+    --display: "Lilita One", "Arial Black", Impact, sans-serif;
+    --body: "Nunito", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--sky);
+    color: var(--cream);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .wrap {
+    min-height: 100%;
+    padding-block: 18px 32px;
+    padding-inline: 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    max-width: 1080px;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+  @media (min-width: 860px) {
+    .wrap { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+  }
+  header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+  h1 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(30px, 5vw, 44px);
+    margin: 0;
+    letter-spacing: 0.5px;
+    color: var(--sun);
+    text-shadow: 0 3px 0 var(--sun-deep);
+  }
+  .eyebrow {
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cream-dim);
+  }
+  .stage {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  #unity-fullscreen-container {
+    position: relative;
+    width: min(100%, calc((100vh - 140px) * 9 / 16), 540px);
+    max-width: 100%;
+    aspect-ratio: 9 / 16;
+    background: var(--horizon);
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  }
+  #unity-canvas { width: 100%; height: 100%; display: block; background: var(--horizon); }
+  #unity-loading-container {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    background: linear-gradient(180deg, var(--sky-2), var(--horizon));
+  }
+  #unity-loading-container .plane { font-size: 42px; animation: bob 1.4s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+  @media (prefers-reduced-motion: reduce) { #unity-loading-container .plane { animation: none; } }
+  #unity-progress-bar-empty { width: 60%; height: 10px; background: rgba(0,0,0,0.35); border-radius: 999px; overflow: hidden; }
+  #unity-progress-bar-full { height: 100%; width: 0; background: var(--sun); transition: width 0.2s; }
+  #unity-loading-text { font-size: 13px; color: var(--cream-dim); font-variant-numeric: tabular-nums; padding-inline: 16px; text-align: center; }
+  #unity-warning { position: absolute; left: 10px; right: 10px; top: 10px; display: none; font-size: 13px; }
+  #unity-warning div { border-radius: 8px; margin-bottom: 6px; color: #111; }
+  .stage-tools { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  button {
+    font: 600 14px var(--body);
+    padding: 9px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--sky-2);
+    color: var(--cream);
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--sun); }
+  button:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+  button.primary { background: var(--sun); color: #2a1406; border-color: var(--sun-deep); }
+  button.primary:hover { background: #ffa161; }
+  aside { display: flex; flex-direction: column; gap: 18px; }
+  .panel { border-top: 1px solid var(--line); padding-top: 14px; }
+  .panel h2 {
+    font-family: var(--display); font-weight: 400; font-size: 19px; margin: 0 0 8px; color: var(--cream); letter-spacing: 0.3px;
+  }
+  .panel p, .panel li { margin: 0; color: var(--cream-dim); }
+  .panel ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
+  .panel strong { color: var(--cream); font-weight: 700; }
+  .keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: center; }
+  kbd {
+    font: 600 12px var(--body); background: var(--sky-2); border: 1px solid var(--line);
+    border-bottom-width: 3px; border-radius: 6px; padding: 2px 7px; color: var(--cream); white-space: nowrap;
+  }
+  .band { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  .band.high { background: var(--enemy); }
+  .band.low { background: var(--coin); }
+  #feedback-note { font-size: 13px; }
+  #fb-status { font-size: 13px; color: var(--coin); min-height: 1.2em; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Sky Squad</h1>
+    <span class="eyebrow">Playtest build · portrait · mouse, keys or touch</span>
+  </header>
+
+  <section class="stage" aria-label="Game">
+    <div id="unity-fullscreen-container">
+      <canvas id="unity-canvas" width="540" height="960" tabindex="-1"></canvas>
+      <div id="unity-loading-container">
+        <div class="plane" aria-hidden="true">&#9992;&#65039;</div>
+        <div id="unity-progress-bar-empty"><div id="unity-progress-bar-full"></div></div>
+        <div id="unity-loading-text">Loading the squad&hellip;</div>
+      </div>
+      <div id="unity-warning"></div>
+    </div>
+    <div class="stage-tools">
+      <button type="button" id="btn-fullscreen">Fullscreen</button>
+      <button type="button" id="btn-feedback" class="primary" hidden>Leave feedback</button>
+    </div>
+    <div id="fb-status" role="status"></div>
+  </section>
+
+  <aside>
+    <div class="panel">
+      <h2>How to play</h2>
+      <ul>
+        <li><span class="band high"></span><strong>High band:</strong> enemy fighters stream in and dive at you. Shoot them before they reach you. Each hit costs one plane.</li>
+        <li><span class="band low"></span><strong>Low band:</strong> loot crates. Break the front crate to grow your squad.</li>
+        <li>Every 100 fighters a <strong>boss</strong> parks on the red line and fires back.</li>
+        <li>Coins persist between attempts. Spend them in the lobby on fire rate, damage and coin revenue, then retry.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Controls</h2>
+      <div class="keys">
+        <kbd>Drag</kbd><span>Move the squad (mouse or finger)</span>
+        <kbd>W A S D</kbd><span>Steer and climb</span>
+        <kbd>Tap</kbd><span>Confirm in the lobby</span>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>What we want to know</h2>
+      <ul>
+        <li>Was it clear why you lost planes?</li>
+        <li>Did the first boss feel fair, or just a wall?</li>
+        <li>Was the drag control too fast, too slow, or right?</li>
+        <li>Anything that looked broken or confusing.</li>
+      </ul>
+      <p id="feedback-note" style="margin-top:10px">Use the <strong>Leave feedback</strong> button under the game, or the comment tool in the top bar of this page.</p>
+    </div>
+  </aside>
+</div>
+
+<script>
+  const canvas = document.querySelector("#unity-canvas");
+  const loadingContainer = document.querySelector("#unity-loading-container");
+  const progressBarFull = document.querySelector("#unity-progress-bar-full");
+  const loadingText = document.querySelector("#unity-loading-text");
+  const fbStatus = document.querySelector("#fb-status");
+
+  function unityShowBanner(msg, type) {
+    const warningBanner = document.querySelector("#unity-warning");
+    const div = document.createElement("div");
+    div.textContent = msg;
+    warningBanner.appendChild(div);
+    warningBanner.style.display = "block";
+    if (type === "error") div.style.cssText = "background:#ffb4ad;padding:10px;";
+    else {
+      div.style.cssText = type === "warning" ? "background:#ffe08a;padding:10px;" : "background:#cde;padding:10px;";
+      setTimeout(() => { warningBanner.removeChild(div); if (!warningBanner.children.length) warningBanner.style.display = "none"; }, 5000);
+    }
+  }
+
+  function failLoad(msg) {
+    progressBarFull.style.width = "0";
+    loadingText.textContent = msg;
+    loadingText.style.color = "#ffb4ad";
+  }
+
+  // The game is WebAssembly. Check the browser can run it before pulling 15+ MB.
+  let wasmOk = false;
+  try {
+    wasmOk = typeof WebAssembly === "object" &&
+      WebAssembly.validate(new Uint8Array([0,0x61,0x73,0x6d,1,0,0,0]));
+  } catch (e) { wasmOk = false; }
+  const inflateOk = typeof DecompressionStream === "function";
+
+  // The two big files are stored gzipped (host has a per-file size cap). The Unity loader
+  // asks for the plain names through fetch(); this shim serves the .gz and inflates it in
+  // the browser, passing through untouched if the host already decoded it on the wire.
+  (function () {
+    const map = {
+      "WebGL.data": { gz: "Build/WebGL.data.gz.wasm", size: 12416024, type: "application/octet-stream" },
+      "WebGL.wasm": { gz: "Build/WebGL.wasm.gz.wasm", size: 29873013, type: "application/wasm" },
+    };
+    const realFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      const url = typeof input === "string" ? input : (input && input.url) || "";
+      const key = Object.keys(map).find((k) => url.endsWith(k));
+      if (!key) return realFetch(input, init);
+      const m = map[key];
+      const target = new URL(m.gz, document.baseURI).href;
+      return realFetch(target, init).then(async (res) => {
+        if (!res.ok || !res.body) return res;
+        const reader = res.body.getReader();
+        const first = await reader.read();
+        const headers = { "Content-Type": m.type, "Content-Length": String(m.size) };
+        if (first.done) return new Response(new Uint8Array(0), { status: 200, headers });
+        const head = first.value;
+        const isGzip = head.length >= 2 && head[0] === 0x1f && head[1] === 0x8b;
+        const rest = new ReadableStream({
+          start(c) { c.enqueue(head); },
+          async pull(c) { const r = await reader.read(); if (r.done) c.close(); else c.enqueue(r.value); },
+          cancel() { return reader.cancel(); },
+        });
+        const body = isGzip ? rest.pipeThrough(new DecompressionStream("gzip")) : rest;
+        return new Response(body, { status: 200, statusText: "OK", headers });
+      });
+    };
+  })();
+
+  if (!wasmOk) {
+    failLoad("This browser or page host blocks WebAssembly, so the game cannot start here.");
+  } else if (!inflateOk) {
+    failLoad("This browser is too old to unpack the game files. Try a current Chrome, Edge, Firefox or Safari.");
+  } else {
+    const buildUrl = "Build";
+    const config = {
+      arguments: [],
+      dataUrl: buildUrl + "/WebGL.data",
+      frameworkUrl: buildUrl + "/WebGL.framework.js",
+      codeUrl: buildUrl + "/WebGL.wasm",
+      streamingAssetsUrl: "StreamingAssets",
+      fullscreenElementID: "unity-fullscreen-container",
+      companyName: "mtjrcloud",
+      productName: "Sky Squad",
+      productVersion: "playtest",
+      showBanner: unityShowBanner,
+    };
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+
+    const script = document.createElement("script");
+    script.src = buildUrl + "/WebGL.loader.js";
+    script.onerror = () => failLoad("The game files did not load. Refresh to try again.");
+    script.onload = () => {
+      createUnityInstance(canvas, config, (progress) => {
+        progressBarFull.style.width = (100 * progress) + "%";
+        loadingText.textContent = progress < 1 ? "Loading the squad… " + Math.round(progress * 100) + "%" : "Starting…";
+      }).then((unityInstance) => {
+        loadingContainer.style.display = "none";
+        document.querySelector("#btn-fullscreen").onclick = () => unityInstance.SetFullscreen(1);
+      }).catch((message) => failLoad("The game could not start: " + message));
+    };
+    document.body.appendChild(script);
+  }
+
+  // Feedback: opens the page's own comment composer when this host provides one.
+  (async () => {
+    const btn = document.querySelector("#btn-feedback");
+    let comments = null;
+    try { comments = window.claude && window.claude.use ? await window.claude.use("comments") : null; } catch (e) { comments = null; }
+    if (!comments) return;
+    btn.hidden = false;
+    btn.onclick = async () => {
+      fbStatus.textContent = "";
+      try {
+        const r = await comments.openComposer({ element: document.querySelector("#unity-fullscreen-container") });
+        if (!r.opened) fbStatus.textContent = "Finish the comment you already started first.";
+      } catch (e) {
+        if (e && e.code === "unavailable") { btn.hidden = true; fbStatus.textContent = "Use the comment tool in the top bar to leave feedback."; }
+        else if (e && e.code === "rate_limited") fbStatus.textContent = "One moment, then try again.";
+        else fbStatus.textContent = "Could not open the comment box. Use the comment tool in the top bar.";
+      }
+    };
+  })();
+</script>
